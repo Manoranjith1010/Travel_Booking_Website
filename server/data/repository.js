@@ -4,6 +4,21 @@ import TravelPackage from '../models/TravelPackage.js';
 import Booking from '../models/Booking.js';
 import { seedAdminUser, seedBookings, seedPackages } from './seed.js';
 
+const localAdminHash = bcrypt.hashSync(seedAdminUser.password, 10);
+const localState = {
+  users: [
+    {
+      _id: 'usr-admin',
+      name: seedAdminUser.name,
+      email: seedAdminUser.email.toLowerCase(),
+      passwordHash: localAdminHash,
+      role: seedAdminUser.role,
+    },
+  ],
+  packages: seedPackages.map((entry) => ({ ...entry })),
+  bookings: seedBookings.map((entry) => ({ ...entry })),
+};
+
 function isMongoReady() {
   return User.db?.readyState === 1;
 }
@@ -81,12 +96,12 @@ export async function bootstrapData() {
   }
 
   return {
-    packages: seedPackages,
-    bookings: seedBookings,
+    packages: localState.packages,
+    bookings: localState.bookings,
     summary: {
-      bookings: seedBookings.length,
-      users: 1,
-      revenue: seedBookings.reduce((total, booking) => total + Number(booking.amount || 0), 0),
+      bookings: localState.bookings.length,
+      users: localState.users.length,
+      revenue: localState.bookings.reduce((total, booking) => total + Number(booking.amount || 0), 0),
     },
   };
 }
@@ -108,7 +123,7 @@ export async function listPackages({ destination, budget } = {}) {
     return packages.map(normalizeId);
   }
 
-  return seedPackages.filter((trip) => matchesText(trip.destination, query) && (!parsedBudget || trip.price <= parsedBudget));
+  return localState.packages.filter((trip) => matchesText(trip.destination, query) && (!parsedBudget || trip.price <= parsedBudget));
 }
 
 export async function listAllPackages() {
@@ -116,7 +131,7 @@ export async function listAllPackages() {
     return (await TravelPackage.find().sort({ createdAt: -1 })).map(normalizeId);
   }
 
-  return seedPackages;
+  return localState.packages;
 }
 
 export async function findUserByEmail(email) {
@@ -124,14 +139,7 @@ export async function findUserByEmail(email) {
     return normalizeId(await User.findOne({ email: email.toLowerCase() }));
   }
 
-  const admin = {
-    _id: 'usr-admin',
-    name: seedAdminUser.name,
-    email: seedAdminUser.email,
-    passwordHash: await bcrypt.hash(seedAdminUser.password, 10),
-    role: seedAdminUser.role,
-  };
-  return email.toLowerCase() === admin.email ? admin : null;
+  return localState.users.find((entry) => entry.email === email.toLowerCase()) || null;
 }
 
 export async function findUserById(userId) {
@@ -139,17 +147,7 @@ export async function findUserById(userId) {
     return normalizeId(await User.findById(userId));
   }
 
-  if (String(userId) === 'usr-admin') {
-    return {
-      _id: 'usr-admin',
-      name: seedAdminUser.name,
-      email: seedAdminUser.email,
-      passwordHash: await bcrypt.hash(seedAdminUser.password, 10),
-      role: seedAdminUser.role,
-    };
-  }
-
-  return null;
+  return localState.users.find((entry) => String(entry._id) === String(userId)) || null;
 }
 
 export async function createUser({ name, email, passwordHash, role = 'user' }) {
@@ -158,13 +156,15 @@ export async function createUser({ name, email, passwordHash, role = 'user' }) {
     return normalizeId(user);
   }
 
-  return {
+  const user = {
     _id: `usr-${Date.now()}`,
     name,
     email: email.toLowerCase(),
     passwordHash,
     role,
   };
+  localState.users.push(user);
+  return user;
 }
 
 export async function createBooking({ userId, packageId, destination, travelDates, travelers, amount }) {
@@ -182,7 +182,7 @@ export async function createBooking({ userId, packageId, destination, travelDate
     return normalizeId(booking);
   }
 
-  return {
+  const booking = {
     _id: `BK-${Date.now()}`,
     userId,
     packageId: packageId || null,
@@ -193,6 +193,8 @@ export async function createBooking({ userId, packageId, destination, travelDate
     paymentStatus: 'Pending',
     bookingStatus: 'Reserved',
   };
+  localState.bookings.unshift(booking);
+  return booking;
 }
 
 export async function listBookingsForUser(userId, role) {
@@ -201,7 +203,7 @@ export async function listBookingsForUser(userId, role) {
     return bookings.map(normalizeId);
   }
 
-  return seedBookings.filter((booking) => bookingMatchesUser(booking, userId, role));
+  return localState.bookings.filter((booking) => bookingMatchesUser(booking, userId, role));
 }
 
 export async function listAllBookings() {
@@ -209,7 +211,7 @@ export async function listAllBookings() {
     return (await Booking.find().sort({ createdAt: -1 })).map(normalizeId);
   }
 
-  return seedBookings;
+  return localState.bookings;
 }
 
 export async function cancelBookingById(bookingId, userId, role) {
@@ -226,7 +228,7 @@ export async function cancelBookingById(bookingId, userId, role) {
     return normalizeId(booking);
   }
 
-  const booking = seedBookings.find((entry) => String(entry._id) === String(bookingId));
+  const booking = localState.bookings.find((entry) => String(entry._id) === String(bookingId));
   if (!booking) {
     return null;
   }
@@ -254,10 +256,10 @@ export async function adminSummary() {
   }
 
   return {
-    bookings: seedBookings.length,
-    users: 1,
-    revenue: seedBookings.reduce((total, booking) => total + Number(booking.amount || 0), 0),
-    packages: seedPackages.length,
+    bookings: localState.bookings.length,
+    users: localState.users.length,
+    revenue: localState.bookings.reduce((total, booking) => total + Number(booking.amount || 0), 0),
+    packages: localState.packages.length,
   };
 }
 

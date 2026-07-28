@@ -9,7 +9,7 @@ import bookingRoutes from './routes/bookingRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import { connectDatabase } from './config/db.js';
-import { store } from './data/store.js';
+import { bootstrapData } from './data/repository.js';
 
 dotenv.config();
 
@@ -25,16 +25,8 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'travel-booking-api' });
 });
 
-app.get('/api/bootstrap', (_req, res) => {
-  res.json({
-    packages: store.packages,
-    bookings: store.bookings,
-    summary: {
-      bookings: store.bookings.length,
-      users: store.users.length,
-      revenue: store.bookings.reduce((total, booking) => total + Number(booking.amount || 0), 0),
-    },
-  });
+app.get('/api/bootstrap', async (_req, res) => {
+  res.json(await bootstrapData());
 });
 
 app.use('/api/auth', authRoutes);

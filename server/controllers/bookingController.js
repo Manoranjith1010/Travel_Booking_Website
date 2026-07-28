@@ -1,4 +1,4 @@
-import { cancelBookingById, createBooking, listBookingsForUser } from '../data/repository.js';
+import { cancelBookingById, createBooking as createBookingRecord, listBookingsForUser } from '../data/repository.js';
 
 export async function listBookings(req, res) {
   const bookings = await listBookingsForUser(req.user.sub, req.user.role);
@@ -12,7 +12,7 @@ export async function createBooking(req, res) {
     return res.status(400).json({ message: 'Destination, travel dates, travelers, and amount are required' });
   }
 
-  const booking = await createBooking({
+  const booking = await createBookingRecord({
     userId: req.user.sub,
     packageId,
     destination,
