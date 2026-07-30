@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node server.js",
+    "build": "node -e \"console.log('No server build step required')\"",
     "start": "node server.js",
     "seed": "node seed.js"
   },

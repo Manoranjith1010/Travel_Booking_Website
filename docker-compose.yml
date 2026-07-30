@@ -1,0 +1,24 @@
+services:
+  server:
+    build:
+      context: ./server
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - JWT_SECRET=${JWT_SECRET}
+      - MONGO_URI=${MONGO_URI}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - CLIENT_ORIGIN=${CLIENT_ORIGIN:-http://localhost:5173}
+    restart: unless-stopped
+
+  client:
+    build:
+      context: ./client
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:4000/api}
+    ports:
+      - "5173:80"
+    depends_on:
+      - server
+    restart: unless-stopped

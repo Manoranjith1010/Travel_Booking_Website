@@ -59,12 +59,12 @@ async function seedMongoIfEmpty() {
   }
 
   if (packageCount === 0) {
-    await TravelPackage.insertMany(seedPackages);
+    await TravelPackage.insertMany(seedPackages.map(({ _id, ...pkg }) => pkg));
   }
 
   if (bookingCount === 0) {
     const admin = await User.findOne({ email: seedAdminUser.email.toLowerCase() });
-    const seededBookings = seedBookings.map((booking) => ({
+    const seededBookings = seedBookings.map(({ _id, ...booking }) => ({
       ...booking,
       userId: admin?._id,
       packageId: null,
