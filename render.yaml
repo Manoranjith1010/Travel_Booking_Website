@@ -17,7 +17,7 @@ services:
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: CLIENT_ORIGIN
-        sync: false
+        value: https://travel-booking-client.onrender.com
 
   - type: web
     name: travel-booking-client
@@ -28,7 +28,7 @@ services:
     staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
-        sync: false
+        value: https://travel-booking-api.onrender.com/api
     routes:
       - type: rewrite
         source: /*
