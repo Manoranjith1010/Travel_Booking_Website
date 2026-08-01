@@ -21,6 +21,10 @@ app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
 app.use(express.json());
 app.use(morgan('dev'));
 
+app.get('/', (_req, res) => {
+  res.json({ message: 'Travel Booking API is running' });
+});
+
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'travel-booking-api' });
 });
