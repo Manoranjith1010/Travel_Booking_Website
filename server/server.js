@@ -1,3 +1,6 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
@@ -12,6 +15,10 @@ import { connectDatabase } from './config/db.js';
 import { bootstrapData } from './data/repository.js';
 
 dotenv.config();
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Present only when client is built alongside the server (single-service deploys)
+const clientDistPath = path.join(__dirname, '../client/dist');
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -34,6 +41,13 @@ app.use('/api/trips', tripRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
+
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+  app.get(/^(?!\/api\/).*/, (_req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
 
 app.use((_req, res) => {
   res.status(404).json({ message: 'Route not found' });
