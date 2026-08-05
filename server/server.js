@@ -56,13 +56,15 @@ app.use((_req, res) => {
 const startServer = async () => {
   try {
     await connectDatabase(process.env.MONGO_URI);
-    app.listen(port, () => {
-      console.log(`Travel Booking API running on port ${port}`);
-    });
   } catch (error) {
-    console.error('Failed to start server:', error.message);
-    process.exit(1);
+    // Mongo is optional at runtime — repository.js falls back to in-memory demo data
+    // whenever the connection isn't ready, so a failed connect should not be fatal.
+    console.error('MongoDB connection failed, continuing in demo mode:', error.message);
   }
+
+  app.listen(port, () => {
+    console.log(`Travel Booking API running on port ${port}`);
+  });
 };
 
 startServer();
